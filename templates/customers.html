@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Customers — Zanite{% endblock %}
+{% block content %}
+<div class="page-header page-header-row">
+  <div>
+    <h1>Customers</h1>
+    <p class="page-subtitle">{{ customers|length }} customer(s)</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addCustomerModal')">+ Add Customer</button>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" class="filter-form">
+    <input type="text" name="q" placeholder="Search customers..." value="{{ search }}">
+    <button type="submit" class="btn btn-secondary">Search</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+<table class="data-table">
+  <thead><tr><th>Name</th><th>Phone</th><th>Total Purchases</th><th>Outstanding Balance</th><th></th></tr></thead>
+  <tbody>
+    {% for c in customers %}
+    <tr>
+      <td>{{ c.name }}</td>
+      <td>{{ c.phone or '—' }}</td>
+      <td>{{ current_user.business.currency }} {{ "{:,.2f}".format(c.total_purchases) }}</td>
+      <td>
+        {% if c.outstanding_balance > 0 %}
+        <span class="badge badge-warning">{{ current_user.business.currency }} {{ "{:,.2f}".format(c.outstanding_balance) }}</span>
+        {% else %}—{% endif %}
+      </td>
+      <td><a href="{{ url_for('customers.customer_detail', customer_id=c.id) }}" class="btn-link">View</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="empty-row">No customers yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="modal" id="addCustomerModal">
+  <div class="modal-box modal-box-narrow">
+    <div class="modal-header">
+      <h2>Add Customer</h2>
+      <button class="modal-close" onclick="closeModal('addCustomerModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('customers.add_customer') }}" class="modal-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Full name<input type="text" name="name" required></label>
+      <label>Phone<input type="tel" name="phone"></label>
+      <label>Email<input type="email" name="email"></label>
+      <label>Address<input type="text" name="address"></label>
+      <button type="submit" class="btn btn-primary full-width">Save Customer</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
+{% endblock %}

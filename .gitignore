@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+
+# Environment & secrets
+.env
+venv/
+.venv/
+env/
+ENV/
+
+# Databases (local only)
+database/business.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Instance data (secret keys, etc.)
+instance/
+
+# Backups
+backups/
+
+# Uploaded files
+static/images/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp

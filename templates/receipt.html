@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Receipt {{ sale.receipt_number }} — Zanite{% endblock %}
+{% block content %}
+<div class="receipt-actions no-print">
+  <a href="{{ url_for('sales.history') }}" class="btn btn-secondary">Back to History</a>
+  <button onclick="window.print()" class="btn btn-primary">Print Receipt</button>
+</div>
+
+<div class="receipt-paper">
+  <div class="receipt-header">
+    <h2>{{ current_user.business.name }}</h2>
+    <p>{{ current_user.business.location or '' }}</p>
+    <p>{{ current_user.business.phone or '' }}</p>
+  </div>
+  <div class="receipt-meta">
+    <span>Receipt: {{ sale.receipt_number }}</span>
+    <span>{{ sale.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+  </div>
+  <div class="receipt-meta">
+    <span>Customer: {{ sale.customer.name if sale.customer else 'Walk-in' }}</span>
+    <span>Served by: {{ sale.employee.full_name if sale.employee else '—' }}</span>
+  </div>
+  <table class="receipt-table">
+    <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for item in sale.items %}
+      <tr>
+        <td>{{ item.product_name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ "{:,.2f}".format(item.unit_price) }}</td>
+        <td>{{ "{:,.2f}".format(item.line_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="receipt-totals">
+    <div><span>Subtotal</span><span>{{ current_user.business.currency }} {{ "{:,.2f}".format(sale.subtotal) }}</span></div>
+    <div><span>Discount</span><span>{{ current_user.business.currency }} {{ "{:,.2f}".format(sale.discount) }}</span></div>
+    <div class="receipt-total-line"><span>Total</span><span>{{ current_user.business.currency }} {{ "{:,.2f}".format(sale.total_amount) }}</span></div>
+    <div><span>Paid ({{ sale.payment_method|capitalize }})</span><span>{{ current_user.business.currency }} {{ "{:,.2f}".format(sale.amount_paid) }}</span></div>
+    {% if sale.balance > 0 %}
+    <div class="receipt-balance"><span>Balance Due</span><span>{{ current_user.business.currency }} {{ "{:,.2f}".format(sale.balance) }}</span></div>
+    {% endif %}
+  </div>
+  <p class="receipt-footer">{{ current_user.business.receipt_footer }}</p>
+</div>
+{% endblock %}

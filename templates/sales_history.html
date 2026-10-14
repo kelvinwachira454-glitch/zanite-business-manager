@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Sales History — Zanite{% endblock %}
+{% block content %}
+<div class="page-header page-header-row">
+  <div>
+    <h1>Sales History</h1>
+    <p class="page-subtitle">{{ sales|length }} sale(s)</p>
+  </div>
+  <a href="{{ url_for('sales.new_sale') }}" class="btn btn-primary">+ New Sale</a>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" class="filter-form">
+    <label>From <input type="date" name="from" value="{{ date_from or '' }}"></label>
+    <label>To <input type="date" name="to" value="{{ date_to or '' }}"></label>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+<table class="data-table">
+  <thead>
+    <tr><th>Receipt</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Balance</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for s in sales %}
+    <tr>
+      <td>{{ s.receipt_number }}</td>
+      <td>{{ s.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+      <td>{{ s.customer.name if s.customer else 'Walk-in' }}</td>
+      <td>{{ s.items|length }}</td>
+      <td>{{ current_user.business.currency }} {{ "{:,.2f}".format(s.total_amount) }}</td>
+      <td><span class="badge badge-muted">{{ s.payment_method|capitalize }}</span></td>
+      <td>{% if s.balance > 0 %}<span class="badge badge-warning">{{ current_user.business.currency }} {{ "{:,.2f}".format(s.balance) }}</span>{% else %}—{% endif %}</td>
+      <td><a href="{{ url_for('sales.receipt', sale_id=s.id) }}" class="btn-link">View Receipt</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="empty-row">No sales recorded yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

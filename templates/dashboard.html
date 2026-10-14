@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Zanite{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <p class="page-subtitle">{{ current_user.business.name }} · {{ current_user.business.currency }}</p>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card kpi-green">
+    <span class="kpi-label">Today's Sales</span>
+    <span class="kpi-value">{{ current_user.business.currency }} {{ "{:,.2f}".format(today_sales) }}</span>
+  </div>
+  <div class="kpi-card kpi-red">
+    <span class="kpi-label">Today's Expenses</span>
+    <span class="kpi-value">{{ current_user.business.currency }} {{ "{:,.2f}".format(today_expenses) }}</span>
+  </div>
+  <div class="kpi-card kpi-blue">
+    <span class="kpi-label">Today's Profit</span>
+    <span class="kpi-value">{{ current_user.business.currency }} {{ "{:,.2f}".format(today_profit) }}</span>
+  </div>
+  <div class="kpi-card kpi-amber">
+    <span class="kpi-label">Outstanding Debts</span>
+    <span class="kpi-value">{{ current_user.business.currency }} {{ "{:,.2f}".format(outstanding_debts) }}</span>
+  </div>
+  <div class="kpi-card kpi-purple">
+    <span class="kpi-label">Products</span>
+    <span class="kpi-value">{{ total_products }}</span>
+  </div>
+  <div class="kpi-card kpi-orange">
+    <span class="kpi-label">Low Stock Alerts</span>
+    <span class="kpi-value">{{ low_stock_items }}</span>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card chart-card-wide">
+    <h3>Sales, Expenses & Profit — Last 7 Days</h3>
+    <canvas id="trendChart" height="90"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Top Selling Products</h3>
+    <canvas id="topProductsChart" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Sales by Payment Method</h3>
+    <canvas id="paymentChart" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Expenses by Category</h3>
+    <canvas id="expenseCatChart" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Low Stock Products</h3>
+    {% if low_stock_products %}
+    <table class="mini-table">
+      <thead><tr><th>Product</th><th>Stock</th><th>Min</th></tr></thead>
+      <tbody>
+      {% for p in low_stock_products %}
+        <tr><td>{{ p.name }}</td><td>{{ p.current_stock }}</td><td>{{ p.minimum_stock_level }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty-note">All products are well stocked.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<script>
+const trendLabels = {{ trend_labels|tojson }};
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: trendLabels,
+    datasets: [
+      { label: 'Sales', data: {{ sales_trend|tojson }}, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', tension: 0.35, fill: true },
+      { label: 'Expenses', data: {{ expense_trend|tojson }}, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.35, fill: true },
+      { label: 'Profit', data: {{ profit_trend|tojson }}, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.35, fill: true }
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+new Chart(document.getElementById('topProductsChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ top_products_labels|tojson }},
+    datasets: [{ label: 'Units Sold', data: {{ top_products_values|tojson }}, backgroundColor: '#8b5cf6' }]
+  },
+  options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+});
+
+new Chart(document.getElementById('paymentChart'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ payment_labels|tojson }},
+    datasets: [{ data: {{ payment_values|tojson }}, backgroundColor: ['#22c55e','#3b82f6','#f59e0b','#ef4444','#8b5cf6'] }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+new Chart(document.getElementById('expenseCatChart'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ expense_cat_labels|tojson }},
+    datasets: [{ data: {{ expense_cat_values|tojson }}, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#22c55e','#8b5cf6','#ec4899','#14b8a6','#64748b'] }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+</script>
+{% endblock %}

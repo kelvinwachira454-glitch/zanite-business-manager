@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Settings — Zanite{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Business Settings</h1>
+  <p class="page-subtitle">Update your business profile, receipt details and currency.</p>
+</div>
+
+<div class="chart-card" style="margin-bottom: 20px;">
+  <h3>Business Profile</h3>
+  <form method="POST" action="{{ url_for('settings.update') }}" enctype="multipart/form-data" class="modal-form" style="padding: 0;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Business name<input type="text" name="name" value="{{ current_user.business.name }}" required></label>
+    <label>Business type<input type="text" name="business_type" value="{{ current_user.business.business_type or '' }}"></label>
+    <label>Phone<input type="tel" name="phone" value="{{ current_user.business.phone or '' }}"></label>
+    <label>Email<input type="email" name="email" value="{{ current_user.business.email or '' }}"></label>
+    <label>Location<input type="text" name="location" value="{{ current_user.business.location or '' }}"></label>
+    <label class="full-width">Address<input type="text" name="address" value="{{ current_user.business.address or '' }}"></label>
+    <label>Currency
+      <select name="currency">
+        {% for code in ['KES','UGX','TZS','NGN','GHS','ZAR','USD'] %}
+        <option value="{{ code }}" {{ 'selected' if current_user.business.currency == code }}>{{ code }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Low stock threshold<input type="number" name="low_stock_threshold" value="{{ current_user.business.low_stock_threshold }}"></label>
+    <label class="full-width">Receipt footer message<input type="text" name="receipt_footer" value="{{ current_user.business.receipt_footer or '' }}"></label>
+    <label>Business logo<input type="file" name="logo" accept=".png,.jpg,.jpeg"></label>
+    <button type="submit" class="btn btn-primary full-width">Save Changes</button>
+  </form>
+</div>
+
+<div class="chart-card">
+  <h3>Change Password</h3>
+  <form method="POST" action="{{ url_for('settings.change_password') }}" class="modal-form" style="padding: 0;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Current password<input type="password" name="current_password" required></label>
+    <label>New password<input type="password" name="new_password" required></label>
+    <label>Confirm new password<input type="password" name="confirm_password" required></label>
+    <button type="submit" class="btn btn-primary full-width">Update Password</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Employees — Zanite{% endblock %}
+{% block content %}
+<div class="page-header page-header-row">
+  <div>
+    <h1>Employees</h1>
+    <p class="page-subtitle">{{ employees|length }} account(s)</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addEmployeeModal')">+ Add Employee</button>
+</div>
+
+<div class="table-wrap">
+<table class="data-table">
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Permissions</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {% for e in employees %}
+    <tr>
+      <td>{{ e.full_name }}</td>
+      <td>{{ e.email }}</td>
+      <td><span class="badge {{ 'badge-success' if e.role == 'owner' else 'badge-muted' }}">{{ e.role|capitalize }}</span></td>
+      <td>{{ 'Full access' if e.role == 'owner' else (e.permissions.replace(',', ', ') if e.permissions else 'None') }}</td>
+      <td><span class="badge {{ 'badge-success' if e.is_active_user else 'badge-muted' }}">{{ 'Active' if e.is_active_user else 'Inactive' }}</span></td>
+      <td class="actions-cell">
+        {% if e.role != 'owner' %}
+        <form method="POST" action="{{ url_for('employees.toggle_active', user_id=e.id) }}" class="inline-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-link">{{ 'Deactivate' if e.is_active_user else 'Activate' }}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty-row">No employee accounts yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="modal" id="addEmployeeModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Add Employee</h2>
+      <button class="modal-close" onclick="closeModal('addEmployeeModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('employees.add_employee') }}" class="modal-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Full name<input type="text" name="full_name" required></label>
+      <label>Phone<input type="tel" name="phone"></label>
+      <label>Email<input type="email" name="email" required></label>
+      <label>Password<input type="password" name="password" required></label>
+      <div class="full-width">
+        <label>Permissions</label>
+        <div class="permission-list">
+          {% for key, label in permissions %}
+          <label class="checkbox-label"><input type="checkbox" name="permissions" value="{{ key }}"> {{ label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary full-width">Create Account</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
+{% endblock %}

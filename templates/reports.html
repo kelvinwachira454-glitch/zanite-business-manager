@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Reports — Zanite{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Reports</h1>
+  <p class="page-subtitle">Download PDF or Excel reports for any date range.</p>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" class="filter-form" id="rangeForm">
+    <label>From <input type="date" name="from" id="fromInput" value="{{ date_from }}"></label>
+    <label>To <input type="date" name="to" id="toInput" value="{{ date_to }}"></label>
+  </form>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Sales Report</h3>
+    <p class="empty-note">Every sale in the selected range, with totals and payment method.</p>
+    <div class="report-actions">
+      <a class="btn btn-secondary" id="salesPdf" href="#">Download PDF</a>
+      <a class="btn btn-secondary" id="salesExcel" href="#">Download Excel</a>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3>Profit &amp; Loss Summary</h3>
+    <p class="empty-note">Revenue, cost of goods sold, expenses and net profit.</p>
+    <div class="report-actions">
+      <a class="btn btn-secondary" id="profitPdf" href="#">Download PDF</a>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3>Inventory Report</h3>
+    <p class="empty-note">Current stock levels and stock value, as of today.</p>
+    <div class="report-actions">
+      <a class="btn btn-secondary" href="{{ url_for('reports.inventory_pdf') }}">Download PDF</a>
+      <a class="btn btn-secondary" href="{{ url_for('reports.inventory_excel') }}">Download Excel</a>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3>Expenses Report</h3>
+    <p class="empty-note">All recorded expenses in the selected range.</p>
+    <div class="report-actions">
+      <a class="btn btn-secondary" id="expensesPdf" href="#">Download PDF</a>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3>Outstanding Debts</h3>
+    <p class="empty-note">All customers currently owing your business.</p>
+    <div class="report-actions">
+      <a class="btn btn-secondary" href="{{ url_for('reports.debts_pdf') }}">Download PDF</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function buildLinks() {
+  const from = document.getElementById('fromInput').value;
+  const to = document.getElementById('toInput').value;
+  const qs = `?from=${from}&to=${to}`;
+  document.getElementById('salesPdf').href = "{{ url_for('reports.sales_pdf') }}" + qs;
+  document.getElementById('salesExcel').href = "{{ url_for('reports.sales_excel') }}" + qs;
+  document.getElementById('profitPdf').href = "{{ url_for('reports.profit_pdf') }}" + qs;
+  document.getElementById('expensesPdf').href = "{{ url_for('reports.expenses_pdf') }}" + qs;
+}
+document.getElementById('fromInput').addEventListener('change', buildLinks);
+document.getElementById('toInput').addEventListener('change', buildLinks);
+buildLinks();
+</script>
+{% endblock %}

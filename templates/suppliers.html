@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Suppliers — Zanite{% endblock %}
+{% block content %}
+<div class="page-header page-header-row">
+  <div>
+    <h1>Suppliers</h1>
+    <p class="page-subtitle">{{ suppliers|length }} supplier(s)</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addSupplierModal')">+ Add Supplier</button>
+</div>
+
+<div class="table-wrap">
+<table class="data-table">
+  <thead><tr><th>Name</th><th>Contact Person</th><th>Phone</th><th>Total Purchased</th><th></th></tr></thead>
+  <tbody>
+    {% for s in suppliers %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.contact_person or '—' }}</td>
+      <td>{{ s.phone or '—' }}</td>
+      <td>{{ current_user.business.currency }} {{ "{:,.2f}".format(s.total_purchased) }}</td>
+      <td><a href="{{ url_for('suppliers.supplier_detail', supplier_id=s.id) }}" class="btn-link">View</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="empty-row">No suppliers yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="modal" id="addSupplierModal">
+  <div class="modal-box modal-box-narrow">
+    <div class="modal-header">
+      <h2>Add Supplier</h2>
+      <button class="modal-close" onclick="closeModal('addSupplierModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('suppliers.add_supplier') }}" class="modal-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Supplier name<input type="text" name="name" required></label>
+      <label>Contact person<input type="text" name="contact_person"></label>
+      <label>Phone<input type="tel" name="phone"></label>
+      <label>Email<input type="email" name="email"></label>
+      <label class="full-width">Address<input type="text" name="address"></label>
+      <button type="submit" class="btn btn-primary full-width">Save Supplier</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
+{% endblock %}

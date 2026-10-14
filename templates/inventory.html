@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Inventory — Zanite{% endblock %}
+{% block content %}
+<div class="page-header page-header-row">
+  <div>
+    <h1>Products &amp; Inventory</h1>
+    <p class="page-subtitle">{{ products|length }} product(s)</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addProductModal')">+ Add Product</button>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" class="filter-form">
+    <input type="text" name="q" placeholder="Search products..." value="{{ search }}">
+    <select name="category" onchange="this.form.submit()">
+      <option value="">All Categories</option>
+      {% for c in categories %}
+      <option value="{{ c.id }}" {{ 'selected' if selected_category == c.id }}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Product</th><th>Category</th><th>SKU</th><th>Buying Price</th><th>Selling Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in products %}
+    <tr class="{{ 'row-low-stock' if p.is_low_stock }}">
+      <td>{{ p.name }}</td>
+      <td>{{ p.category.name if p.category else '—' }}</td>
+      <td>{{ p.sku or '—' }}</td>
+      <td>{{ current_user.business.currency }} {{ "{:,.2f}".format(p.buying_price) }}</td>
+      <td>{{ current_user.business.currency }} {{ "{:,.2f}".format(p.selling_price) }}</td>
+      <td>{{ p.current_stock }} {% if p.is_low_stock %}<span class="badge badge-warning">Low</span>{% endif %}</td>
+      <td><span class="badge {{ 'badge-success' if p.status == 'active' else 'badge-muted' }}">{{ p.status|capitalize }}</span></td>
+      <td class="actions-cell">
+        <button class="btn-link" onclick="openStockModal({{ p.id }}, '{{ p.name }}')">Adjust Stock</button>
+        <form method="POST" action="{{ url_for('inventory.delete_product', product_id=p.id) }}" class="inline-form" onsubmit="return confirm('Remove this product?')">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-link btn-link-danger">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="empty-row">No products yet. Add your first product to get started.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="modal" id="addProductModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Add Product</h2>
+      <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('inventory.add_product') }}" class="modal-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Product name<input type="text" name="name" required></label>
+      <label>SKU / Code<input type="text" name="sku"></label>
+      <label>Category
+        <select name="category_id">
+          <option value="">Select category</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Or add new category<input type="text" name="new_category" placeholder="e.g. Beverages"></label>
+      <label>Buying price<input type="number" step="0.01" name="buying_price" required></label>
+      <label>Selling price<input type="number" step="0.01" name="selling_price" required></label>
+      <label>Initial stock<input type="number" name="initial_stock" value="0"></label>
+      <label>Minimum stock level<input type="number" name="minimum_stock_level" value="5"></label>
+      <label class="full-width">Description<textarea name="description" rows="2"></textarea></label>
+      <button type="submit" class="btn btn-primary full-width">Save Product</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="stockModal">
+  <div class="modal-box modal-box-narrow">
+    <div class="modal-header">
+      <h2>Adjust Stock — <span id="stockProductName"></span></h2>
+      <button class="modal-close" onclick="closeModal('stockModal')">&times;</button>
+    </div>
+    <form method="POST" id="stockForm" class="modal-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Movement type
+        <select name="movement_type">
+          <option value="purchase">Add Stock (Purchase)</option>
+          <option value="adjustment">Adjustment (+/-)</option>
+        </select>
+      </label>
+      <label>Quantity (use negative to reduce)<input type="number" name="quantity" required></label>
+      <label>Note<input type="text" name="note" placeholder="e.g. Restocked from supplier"></label>
+      <button type="submit" class="btn btn-primary full-width">Update Stock</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openStockModal(productId, name) {
+  document.getElementById('stockProductName').textContent = name;
+  document.getElementById('stockForm').action = `/inventory/products/${productId}/adjust-stock`;
+  openModal('stockModal');
+}
+</script>
+{% endblock %}

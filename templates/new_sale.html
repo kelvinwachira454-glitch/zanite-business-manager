@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}New Sale — Zanite{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>New Sale</h1>
+  <p class="page-subtitle">Search products, build the cart, and check out.</p>
+</div>
+
+<div class="pos-layout">
+  <div class="pos-catalog">
+    <input type="text" id="productSearch" placeholder="Search products by name..." class="pos-search">
+    <div class="product-grid" id="productGrid">
+      {% for p in products %}
+      <button class="product-tile" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ p.selling_price }}" data-stock="{{ p.current_stock }}" onclick="addToCart(this)">
+        <span class="product-tile-name">{{ p.name }}</span>
+        <span class="product-tile-price">{{ current_user.business.currency }} {{ "{:,.2f}".format(p.selling_price) }}</span>
+        <span class="product-tile-stock">{{ p.current_stock }} in stock</span>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pos-cart">
+    <h3>Cart</h3>
+    <div id="cartItems" class="cart-items">
+      <p class="empty-note" id="emptyCartNote">No items yet</p>
+    </div>
+    <div class="cart-summary">
+      <div class="cart-row"><span>Subtotal</span><span id="cartSubtotal">{{ current_user.business.currency }} 0.00</span></div>
+      <label class="cart-row">Discount
+        <input type="number" id="discountInput" value="0" min="0" step="0.01" onchange="renderCart()">
+      </label>
+      <div class="cart-row cart-total"><span>Total</span><span id="cartTotal">{{ current_user.business.currency }} 0.00</span></div>
+    </div>
+
+    <form method="POST" action="{{ url_for('sales.create_sale') }}" id="checkoutForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="cart_data" id="cartDataInput">
+      <label>Customer (optional, required for credit)
+        <select name="customer_id">
+          <option value="">Walk-in Customer</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Payment method
+        <select name="payment_method" id="paymentMethod" onchange="togglePaid()">
+          <option value="cash">Cash</option>
+          <option value="mpesa">M-Pesa / Mobile Money</option>
+          <option value="card">Card</option>
+          <option value="credit">Credit (Pay Later)</option>
+        </select>
+      </label>
+      <label id="amountPaidLabel">Amount paid
+        <input type="number" step="0.01" name="amount_paid" id="amountPaidInput">
+      </label>
+      <button type="submit" class="btn btn-primary btn-block" id="checkoutBtn" disabled>Complete Sale</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+let cart = [];
+const currency = "{{ current_user.business.currency }}";
+
+function addToCart(el) {
+  const id = parseInt(el.dataset.id);
+  const stock = parseInt(el.dataset.stock);
+  const existing = cart.find(item => item.product_id === id);
+  const currentQty = existing ? existing.quantity : 0;
+  if (currentQty + 1 > stock) { alert('Not enough stock available.'); return; }
+  if (existing) { existing.quantity += 1; }
+  else { cart.push({ product_id: id, name: el.dataset.name, price: parseFloat(el.dataset.price), quantity: 1, stock }); }
+  renderCart();
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(i => i.product_id === id);
+  if (!item) return;
+  const newQty = item.quantity + delta;
+  if (newQty <= 0) { cart = cart.filter(i => i.product_id !== id); }
+  else if (newQty > item.stock) { alert('Not enough stock available.'); }
+  else { item.quantity = newQty; }
+  renderCart();
+}
+
+function renderCart() {
+  const container = document.getElementById('cartItems');
+  const emptyNote = document.getElementById('emptyCartNote');
+  container.innerHTML = '';
+  if (cart.length === 0) {
+    container.appendChild(emptyNote);
+  } else {
+    cart.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'cart-item';
+      row.innerHTML = `
+        <span class="cart-item-name">${item.name}</span>
+        <div class="cart-item-qty">
+          <button type="button" onclick="changeQty(${item.product_id}, -1)">−</button>
+          <span>${item.quantity}</span>
+          <button type="button" onclick="changeQty(${item.product_id}, 1)">+</button>
+        </div>
+        <span class="cart-item-total">${currency} ${(item.price * item.quantity).toFixed(2)}</span>
+      `;
+      container.appendChild(row);
+    });
+  }
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+  const total = Math.max(0, subtotal - discount);
+  document.getElementById('cartSubtotal').textContent = `${currency} ${subtotal.toFixed(2)}`;
+  document.getElementById('cartTotal').textContent = `${currency} ${total.toFixed(2)}`;
+  document.getElementById('amountPaidInput').value = total.toFixed(2);
+  document.getElementById('cartDataInput').value = JSON.stringify(cart.map(i => ({ product_id: i.product_id, quantity: i.quantity })));
+  document.getElementById('checkoutBtn').disabled = cart.length === 0;
+}
+
+function togglePaid() {
+  const method = document.getElementById('paymentMethod').value;
+  const label = document.getElementById('amountPaidLabel');
+  label.style.display = method === 'credit' ? 'flex' : 'flex';
+}
+
+document.getElementById('productSearch').addEventListener('input', function () {
+  const term = this.value.toLowerCase();
+  document.querySelectorAll('.product-tile').forEach(tile => {
+    tile.style.display = tile.dataset.name.toLowerCase().includes(term) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}

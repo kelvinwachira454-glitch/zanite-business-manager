@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Debts / Credit — Zanite{% endblock %}
+{% block content %}
+<div class="page-header page-header-row">
+  <div>
+    <h1>Debts / Credit</h1>
+    <p class="page-subtitle">Total outstanding: {{ current_user.business.currency }} {{ "{:,.2f}".format(total_outstanding) }}</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addDebtModal')">+ Add Debt</button>
+</div>
+
+<div class="table-wrap">
+<table class="data-table">
+  <thead><tr><th>Customer</th><th>Date</th><th>Due</th><th>Original</th><th>Balance</th><th></th></tr></thead>
+  <tbody>
+    {% for d in debts %}
+    <tr>
+      <td><a href="{{ url_for('customers.customer_detail', customer_id=d.customer.id) }}">{{ d.customer.name }}</a></td>
+      <td>{{ d.created_at.strftime('%d %b %Y') }}</td>
+      <td>
+        {% if d.due_date %}
+          {{ d.due_date.strftime('%d %b %Y') }}
+          {% if d.due_date < today %}<span class="badge badge-danger">Overdue</span>{% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td>{{ current_user.business.currency }} {{ "{:,.2f}".format(d.original_amount) }}</td>
+      <td><span class="badge badge-warning">{{ current_user.business.currency }} {{ "{:,.2f}".format(d.balance) }}</span></td>
+      <td><button class="btn-link" onclick="openPayModal({{ d.id }}, {{ d.balance }})">Record Payment</button></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty-row">No outstanding debts. Great work!</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="modal" id="addDebtModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Add Debt</h2>
+      <button class="modal-close" onclick="closeModal('addDebtModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('customers.add_debt') }}" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="full-width">Customer
+        <select name="customer_id" id="debtCustomerSelect">
+          <option value="">Select customer</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Or new customer name<input type="text" name="new_customer_name" id="debtNewCustomer" placeholder="e.g. Jane Wanjiru"></label>
+      <label>New customer phone<input type="tel" name="new_customer_phone"></label>
+      <label>Amount owed<input type="number" step="0.01" min="0.01" name="amount" required></label>
+      <label>Due date (optional)<input type="date" name="due_date"></label>
+      <button type="submit" class="btn btn-primary full-width">Save Debt</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="payModal">
+  <div class="modal-box modal-box-narrow">
+    <div class="modal-header">
+      <h2>Record Payment</h2>
+      <button class="modal-close" onclick="closeModal('payModal')">&times;</button>
+    </div>
+    <form method="POST" id="payForm" class="modal-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Amount (balance: <span id="payBalance"></span>)<input type="number" step="0.01" name="amount" id="payAmount" required></label>
+      <label>Payment method
+        <select name="payment_method">
+          <option value="cash">Cash</option>
+          <option value="mpesa">M-Pesa / Mobile Money</option>
+          <option value="bank">Bank Transfer</option>
+        </select>
+      </label>
+      <button type="submit" class="btn btn-primary full-width">Save Payment</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openPayModal(debtId, balance) {
+  document.getElementById('payBalance').textContent = balance.toFixed(2);
+  document.getElementById('payAmount').max = balance;
+  document.getElementById('payForm').action = `/customers/debts/${debtId}/pay`;
+  openModal('payModal');
+}
+</script>
+{% endblock %}
